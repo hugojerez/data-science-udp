@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/hugojerez/data-science-udp/issues"
   },
-  "homepage": "https://github.com/hugojerez/data-science-udp#readme"
+  "homepage": "https://github.com/hugojerez/data-science-udp#readme",
+  "dependencies": {
+    "canvas": "^2.10.1"
+  }
 }
