@@ -1,12 +1,11 @@
 // read a file line by line
-var fs = require("fs");
-var readline = require("readline");
-var stream = require("stream");
-
+const fs = require("fs");
+const readline = require("readline");
+const stream = require("stream");
 
 // convert excel alphabet to number
 function excelAlphaToNumber(alpha) {
-  var i,
+  let i,
     j,
     result = 0;
   for (i = 0, j = alpha.length - 1; i < alpha.length; i += 1, j -= 1) {
@@ -77,62 +76,47 @@ const comunas = [
   "Padre Hurtado",
   "Peñaflor",
 ];
-const indices = {
-  G: "Ruidos molestos",
-  T: "Consumo de alcohol vía pública",
-  AG: "Ebriedad",
-  AT: "Hurtos",
-  BG: "Otros robos con fuerza",
-  BT: "Riña pública",
-  CG: "Violencia intrafamiliar",
-  CT: "Abusos y violaciones",
-  DG: "Amenazas",
-  DT: "Daños",
-  EG: "Lesiones",
-  ET: "Robo y receptación",
-};
+const situations =  require('./mapeoSituaciones.js');
 
 const años = [2017, 2018, 2019, 2020, 2021];
 
-for (const año of años) {
-    var lineas = [];
+fs.rmSync("output/*", { force: true });
 
-  var instream = fs.createReadStream(String(año));
-  var outstream = new stream();
-  var rl = readline.createInterface(instream, outstream);
+for (const año of años) {
+  const rawColumns = [];
+
+  const instream = fs.createReadStream('input/'+String(año)+'.csv');
+  const outstream = new stream();
+  const rl = readline.createInterface(instream, outstream);
 
   // leer lineas
 
   rl.on("line", function (line) {
-    lineas.push(line);
+    rawColumns.push(line);
   });
   rl.on("close", function () {
-
-    // do something with lineas
-    //console.log(lineas);
-
  
+    for (const situation in situations) {
+      const columns = rawColumns.map((rawColumns) => {
+        const column = rawColumns.split(",");
+        return column;
+      });
+      let selectedColumns = columns
+        .map((column) => {
+          return column.slice(
+            excelAlphaToNumber(situation) - 1,
+            excelAlphaToNumber(situation) - 1 + 12
+          );
+        })
+        .slice(4, 56);
 
-    for (const indice in indices) {
-
-        const matrix = lineas.map((line) => {
-            const rows = line.split("\t");
-            return rows;
-          });
-      let result = matrix.map((a) => {
-        return a.slice(
-          excelAlphaToNumber(indice)-1,
-          excelAlphaToNumber(indice) -1 + 12
-        );
-      }).slice(4,56)
-      
-      result = result.map((value,index)=>{
-        return [comunas[index]||"",...value]
-      })
+      selectedColumns = selectedColumns.map((rows, index) => {
+        return [comunas[index] || "", ...rows];
+      });
 
       fs.writeFile(
-        `output/${año}-${indices[indice]}.csv`,
-        ArrayToCSV(result),
+        `output/${año}-${situations[situation]}.csv`,
+        ArrayToCSV(selectedColumns),
         function (err) {
           if (err) {
             return console.log(err);
