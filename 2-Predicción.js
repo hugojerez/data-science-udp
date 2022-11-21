@@ -57,8 +57,8 @@ for (const situacion in añosData) {
 
       {
         log: true,
-        iterations:   1e5,
-        errorThresh:  0.001,
+        iterations:   100,
+        //errorThresh:  0.001,
       }
     );
 
