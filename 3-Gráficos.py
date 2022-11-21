@@ -1,6 +1,6 @@
 import os 
-import matplotlib.pyplot as plt
-
+from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
 
 import pandas as pd
 # remove all files in folder
@@ -28,14 +28,21 @@ for file in os.listdir("predictions"):
         # format values to number 
         value = [float(v) for v in value]
 
+        # show months in x axis
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%Y'))
+        plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=3))
         
-        print(date)
+        plt.figure(figsize=(12,8))
+        
         plt.plot(date, value)
-     
-        # save plot to file
-        plt.savefig('plots/' + file + '.png', bbox_inches='tight')
-        # clear plot
-        plt.clf()
+        plt.gcf().autofmt_xdate()
+        plt.title(file)
+
+        plt.savefig(os.path.join("plots", file + '.png'), dpi=600 )
+        #plt.show()
+        plt.close()
+        
+   
         
         
 

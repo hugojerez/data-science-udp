@@ -23,16 +23,10 @@ for (const situacion of Object.values(situaciones)) {
         const comuna = line.split(",")[0];
         añosData[situacion][comuna] = añosData[situacion][comuna] || [];
         for (const monthIndex in months) {
-          añosData[situacion][comuna].push({
-            input: {
-              month: (Number(monthIndex) + 12 * (Number(año) - 2017)) / 100,
-            },
-            output: { total: Number(months[monthIndex]) / 200 },
-          });
+          const realMonth = monthIndex/12
+          añosData[situacion][comuna].push(  Number(months[monthIndex]) );
         }
-       // if(1) continue 
-
-        //if(1) throw Error(JSON.stringify(  añosData[situacion][comuna]))
+    
        
       }
     } catch (e) {
@@ -41,7 +35,14 @@ for (const situacion of Object.values(situaciones)) {
   }
 }
 
-console.log(añosData);
+
+const convertIndexToMonthAndYear = (index) => {
+
+  const year = Math.floor(index/12)+ 2017
+  const month = 1+index%12
+  return {month,year}
+}
+//console.log(añosData);
 
 // remove files in folder predictions 
 fs.rmSync("./predictions", { recursive: true, force: true });
@@ -50,47 +51,39 @@ fs.mkdirSync("./predictions");
 
 for (const situacion in añosData) {
   for (const comuna in añosData[situacion]) {
-    const net = new brain.NeuralNetwork();
+    var net = new brain.recurrent.GRUTimeStep({
+      // only positive numbers 
+inputRange: [0, 200],      
+
+});
+
 
     net.train(
-      añosData[situacion][comuna],
-
-      {
-        log: true,
-        iterations:   100,
-        //errorThresh:  0.001,
-      }
+  [   [... añosData[situacion][comuna] ]]
     );
 
-    const monthsPrediccion = Array(12*añosParaPredecir)
-      .fill(0).map((el,month)=>{
-        return {
-            month: (años.length*12 +  month) / 100,
-        }
-      })
-      
-    for (const test of monthsPrediccion) {
-      let result = net.run(test);
-      añosData[situacion][comuna].push({
-        input: test,
-        output: result,
-      });
-    }
+// many results
+
+    const output = net.forecast(añosData[situacion][comuna], añosParaPredecir);
+    console.log(output)
+      añosData[situacion][comuna].push( 
+      ...  
+       output.map(a=>Math.max(Math.round(a),0))
+        
+      )
+    
 
 
     let data = "x,y\n";
     for (const monthsIndex in añosData[situacion][comuna]) {
-      let yearmonth = 100 * añosData[situacion][comuna][monthsIndex].input.month;
-      let year = Math.floor(yearmonth / 12)+2017;
-      let month = 1+yearmonth % 12;
-      // pad left with zero month
-
-      yearmonth = String(String(Number(Math.floor(month))).padStart(1, "0") + '-'+String(Number(year)) );
+   
+      
+      const {month,year}= convertIndexToMonthAndYear(monthsIndex)
 
       data +=
-        yearmonth +
+        month+'-' + year +
         "," +
-        Math.floor(200 * añosData[situacion][comuna][monthsIndex].output.total) +
+         añosData[situacion][comuna][monthsIndex] +
         "\n";
     }
     fs.writeFileSync(
